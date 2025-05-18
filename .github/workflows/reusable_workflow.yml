@@ -1,0 +1,60 @@
+name: Test reusable workflow
+
+on:
+  workflow_call:
+    inputs:
+      platform:
+        type: string
+        description: Which platform to build for (ubuntu-22.04 and ubuntu-24.04 are supported)
+        default: ubuntu-22.04
+      unreal_version:
+        type: string
+        description: Which Unreal version to build for (5.4.4 and 5.5.4 are supported)
+        default: 5.5.4
+      environment:
+        type: string
+        description: environment to deploy to
+        required: false
+        default: ""
+
+env:
+  UNREAL_VERSION: "${{ inputs.unreal_version }}"
+
+jobs:
+  build:
+    name: Test job
+    runs-on: ${{ inputs.platform }}
+    environment: ${{ inputs.environment != '' && inputs.environment || null }}
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}-${{ inputs.platform }}-${{ inputs.unreal_version }}
+      cancel-in-progress: true
+    steps:
+    - name: Validate Inputs
+      run: |
+        case "${{ inputs.platform }}" in
+          "ubuntu-22.04"|"ubuntu-24.04") ;;
+          *)
+            echo "Error: Invalid platform. Only ubuntu-22.04 and ubuntu-24.04 are supported."
+            exit 1
+            ;;
+        esac
+        case "${{ inputs.unreal_version }}" in
+          "5.4.4"|"5.5.4") ;;
+          *)
+            echo "Error: Invalid Unreal Version. Only 5.4.4 and 5.5.4 are supported."
+            exit 1
+            ;;
+        esac
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        path: ${{ inputs.checkout_path }}
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        fetch-depth: 0
+        submodules: recursive
+    - name: Log in to Epic Container Registry
+      uses: docker/login-action@v2
+      with:
+        registry: ghcr.io
+        username: ${{ secrets.EPIC_DOCKER_USERNAME }}
+        password: ${{ secrets.EPIC_DOCKER_TOKEN }}
