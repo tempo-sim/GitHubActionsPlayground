@@ -1,0 +1,27 @@
+name: Test workflow
+
+on:
+  push:
+    branches:
+      - main
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Test job
+    permissions:
+      contents: read
+      pull-requests: write
+    uses: ./.github/workflows/reusable_workflow.yml
+    strategy:
+      matrix:
+        platform: [ ubuntu-22.04 ]
+        unreal_version: [ 5.5.4 ]
+      fail-fast: false
+    with:
+      platform: ${{ matrix.platform }}
+      unreal_version: ${{ matrix.unreal_version }}
+      environment: ${{ github.event_name != 'pull_request_target' || github.event.pull_request.head.repo.full_name == github.repository && 'fork-pr-environment' || '' }}
+    secrets: inherit
