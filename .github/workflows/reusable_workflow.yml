@@ -29,6 +29,12 @@ jobs:
       group: ${{ github.workflow }}-${{ github.ref }}-${{ inputs.platform }}-${{ inputs.unreal_version }}
       cancel-in-progress: true
     steps:
+    - name: Check mnt Space
+      run: |
+        du -sh /mnt || true
+        ls -la /mnt || true
+        mount | grep /mnt || true
+        df -h /mnt
     - name: Validate Inputs
       run: |
         case "${{ inputs.platform }}" in
