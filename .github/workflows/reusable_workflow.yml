@@ -31,9 +31,9 @@ jobs:
     steps:
     - name: Check mnt Space
       run: |
-        du -sh /mnt || true
         ls -la /mnt || true
-        mount | grep /mnt || true
+        df -h /mnt
+        docker system prune -af --volumes
         df -h /mnt
     - name: Validate Inputs
       run: |
